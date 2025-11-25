@@ -12,10 +12,7 @@ class ConfigParser:
         
     def remove_comments(self, text: str) -> str:
         """Удаляет однострочные и многострочные комментарии"""
-        # Удаляем однострочные комментарии
         text = re.sub(r'C .*$', '', text, flags=re.MULTILINE)
-        
-        # Удаляем многострочные комментарии
         text = re.sub(r'--\[\[.*?\]\]', '', text, flags=re.DOTALL)
         
         return text
@@ -66,8 +63,6 @@ class ConfigParser:
     def parse_value(self, token: str) -> Any:
         """Парсит значения (числа, массивы, константы)"""
         token = token.strip()
-        
-        # Проверка на константу
         if token.startswith('{') and token.endswith('}'):
             const_name = token[1:-1].strip()
             if const_name in self.constants:
@@ -75,15 +70,12 @@ class ConfigParser:
             else:
                 raise SyntaxError(f"Неизвестная константа: {const_name}")
         
-        # Проверка на массив
         if token.startswith('array(') and token.endswith(')'):
             return self.parse_array(token)
         
-        # Проверка на число
         if re.match(r'^[+-]?([1-9][0-9]*|0)(\.[0-9]+)?$', token):
             return self.parse_number(token)
         
-        # Если это имя, но не константа - это ошибка
         if re.match(r'^[a-z][a-z0-9_]*$', token):
             raise SyntaxError(f"Неизвестный идентификатор: {token}")
         
@@ -122,17 +114,13 @@ class ConfigParser:
     
     def parse(self, text: str) -> Dict[str, Any]:
         """Основной метод парсинга"""
-        # Очищаем состояние
         self.constants = {}
         self.output_data = {}
         
-        # Удаляем комментарии
         text = self.remove_comments(text)
         
-        # Обрабатываем определения констант
         text = self.process_definitions(text)
         
-        # Парсим оставшиеся присваивания
         for line in text.split('\n'):
             line = line.strip()
             if line and not line.startswith('C ') and not line.startswith('--'):
