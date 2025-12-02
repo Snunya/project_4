@@ -174,3 +174,37 @@ allowed_ports:
   - 443
   - 8080
 ```
+## Тесты
+**Тест 1***
+Вывод веб-сервера в консоль
+```
+python config_converter.py -i webserver.config
+```
+**Тест 2***
+Сохранение веб-сервера в файл
+```
+python config_converter.py -i webserver.config -o test.yaml
+```
+Должен создаться файл test.yaml
+**Тест 3***
+Проверка созданного файла
+```
+type test.yaml
+```
+**Тест 4***
+Игра
+```
+python config_converter.py -i game.config
+```
+**Тест 5***
+Обработка ошибок
+```
+python config_converter.py -i несуществующий.config
+```
+**Тест 6***
+Запуск тестов
+```
+python -m unittest test_config_converter.py
+```
+
+
