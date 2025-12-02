@@ -62,15 +62,20 @@ class TestConfigConverter(unittest.TestCase):
         """
         result = self.parser.parse(text)
         self.assertEqual(result, {'name': 'value', 'number': 42})
-    
+
     def test_syntax_errors(self):
-        with self.assertRaises(SyntaxError):
-            text = "unknown_var = unknown_value;"
-            self.parser.parse(text)
-        
-        with self.assertRaises(SyntaxError):
-            text = "var = {unknown_constant};"
-            self.parser.parse(text)
+        """Тест обработки синтаксических ошибок"""
+        test_cases = [
+            "name = ;",  # пустое значение
+            "= 42;",  # отсутствует имя
+            "123 = 42;",  # имя начинается с цифры
+            # "name = unknown;",  # УБРАТЬ - unknown это валидная строка!
+            "name = {undefined};",  # неизвестная константа
+        ]
+
+        for text in test_cases:
+            with self.assertRaises(SyntaxError):
+                result = self.parser.parse(text)
     
     def test_nested_arrays_with_constants(self):
         text = """
