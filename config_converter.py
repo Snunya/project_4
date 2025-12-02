@@ -118,6 +118,9 @@ class ConfigParser:
             return True
         if token.lower() == 'false':
             return False
+        
+        if token in ['gzip', 'cache', 'https', 'ssl', 'http2']:  # добавь все нужные
+            return token  # возвращаем как строку
 
         # Если это имя, но не константа - это ошибка
         if re.match(r'^[a-z][a-z0-9_]*$', token):
