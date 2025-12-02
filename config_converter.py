@@ -5,6 +5,7 @@ import argparse
 import yaml
 from typing import Dict, Any, List, Union
 
+
 class ConfigParser:
     def __init__(self):
         self.constants: Dict[str, Any] = {}
@@ -15,23 +16,23 @@ class ConfigParser:
         # Удаляем однострочные комментарии (начинаются с C и пробела)
         lines = text.split('\n')
         cleaned_lines = []
-        
+
         for line in lines:
             # Удаляем комментарий C
             if 'C ' in line:
                 line = line.split('C ')[0]
             cleaned_lines.append(line.strip())
-        
+
         text = '\n'.join(cleaned_lines)
-        
+
         # Удаляем многострочные комментарии --[[ ... ]]
         while '--[[' in text:
             start = text.find('--[[')
             end = text.find(']]', start)
             if end == -1:
                 break
-            text = text[:start] + text[end+2:]
-        
+            text = text[:start] + text[end + 2:]
+
         return text
 
     def parse_number(self, token: str) -> Union[int, float]:
@@ -54,7 +55,7 @@ class ConfigParser:
         tokens = []
         current = ""
         depth = 0  # глубина вложенных скобок
-        
+
         for char in content:
             if char == '(' or char == '{' or char == '[':
                 depth += 1
@@ -68,21 +69,21 @@ class ConfigParser:
                 current = ""
             else:
                 current += char
-        
+
         if current.strip():
             tokens.append(current.strip())
-        
+
         # Парсим каждый элемент
         result = []
         for token in tokens:
             result.append(self.parse_value(token))
-        
+
         return result
 
     def parse_value(self, token: str) -> Any:
         """Парсит значения (числа, массивы, константы, строки, булевы)"""
         token = token.strip()
-        
+
         if not token:
             raise SyntaxError("Пустое значение")
 
@@ -103,7 +104,7 @@ class ConfigParser:
             return self.parse_number(token)
 
         # Проверка на строку в кавычках
-        if len(token) >= 2 and ((token.startswith('"') and token.endswith('"')) or 
+        if len(token) >= 2 and ((token.startswith('"') and token.endswith('"')) or
                                 (token.startswith("'") and token.endswith("'"))):
             return token[1:-1]
 
@@ -123,57 +124,57 @@ class ConfigParser:
         """Обрабатывает объявления констант и удаляет их из текста"""
         lines = text.split('\n')
         result_lines = []
-        
+
         i = 0
         while i < len(lines):
             line = lines[i].strip()
             if not line:
                 i += 1
                 continue
-            
+
             # Ищем определение константы
             def_match = re.search(r'\(def\s+([a-z][a-z0-9_]*)\s+(.*?)\);', line)
             if def_match:
                 const_name = def_match.group(1)
                 const_value = def_match.group(2).strip()
-                
+
                 try:
                     self.constants[const_name] = self.parse_value(const_value)
                 except Exception as e:
                     raise SyntaxError(f"Ошибка в определении константы {const_name}: {e}")
-                
+
                 # Удаляем это определение из строки
                 line = re.sub(r'\(def\s+[a-z][a-z0-9_]*\s+.*?\);', '', line)
-                
+
                 # Проверяем, есть ли в строке еще что-то кроме пробелов
                 if line.strip():
                     result_lines.append(line.strip())
             else:
                 # Если это не определение
                 result_lines.append(line)
-            
+
             i += 1
-        
+
         return '\n'.join(result_lines)
 
     def parse_assignment(self, line: str) -> tuple[str, Any]:
         """Парсит присваивание вида 'имя = значение;'"""
         # Удаляем точку с запятой в конце если есть
         line = line.rstrip(';').strip()
-        
+
         if '=' not in line:
             raise SyntaxError(f"Отсутствует '=' в присваивании: {line}")
-        
+
         parts = line.split('=', 1)
         name = parts[0].strip()
         value_str = parts[1].strip()
-        
+
         # Проверяем имя переменной
         if not re.match(r'^[a-z][a-z0-9_]*$', name):
             raise SyntaxError(f"Некорректное имя переменной: {name}")
-        
+
         value = self.parse_value(value_str)
-        
+
         return name, value
 
     def split_statements(self, text: str) -> List[str]:
@@ -181,23 +182,23 @@ class ConfigParser:
         statements = []
         current = ""
         depth = 0  # для учета скобок
-        
+
         for char in text:
             if char == '(' or char == '{' or char == '[':
                 depth += 1
             elif char == ')' or char == '}' or char == ']':
                 depth -= 1
-            
+
             current += char
-            
+
             if char == ';' and depth == 0:
                 statements.append(current.strip())
                 current = ""
-        
+
         # Добавляем остаток, если он есть
         if current.strip():
             statements.append(current.strip())
-        
+
         return statements
 
     def parse(self, text: str) -> Dict[str, Any]:
@@ -207,18 +208,18 @@ class ConfigParser:
 
         # 1. Удаляем комментарии
         text = self.remove_comments(text)
-        
+
         # 2. Обрабатываем определения констант
         text = self.process_definitions(text)
-        
+
         # 3. Разбиваем на отдельные операторы
         statements = self.split_statements(text)
-        
+
         # 4. Обрабатываем каждый оператор
         for statement in statements:
             if not statement or statement == ';':
                 continue
-                
+
             try:
                 name, value = self.parse_assignment(statement)
                 self.output_data[name] = value
@@ -226,7 +227,7 @@ class ConfigParser:
                 raise SyntaxError(f"Ошибка в выражении '{statement}': {e}")
             except Exception as e:
                 raise SyntaxError(f"Неожиданная ошибка в '{statement}': {e}")
-        
+
         return self.output_data
 
 
